@@ -33,7 +33,14 @@ proc encode*[T: SomeInteger](n: T): seq[byte] =
       v = v or 0x80
     result.add(v.byte)
 
-proc decode*[T: SomeInteger](input: openarray[byte]): (Option[T], seq[byte]) =
+proc encode*[T: float32|float64](n: T): seq[byte] =
+  ## Returns a sequence containing the encoded floating point number
+  when T is float32:
+    result = cast[uint32](n).encode()
+  elif T is float64:
+    result = cast[uint64](n).encode()
+
+proc decode*[T: SomeInteger|float32|float64](input: openarray[byte]): (Option[T], seq[byte]) =
   ## Returns a tuple containing the (optional) first decoded integer
   ## and the remainder of the input as a sequence of bytes
 
@@ -44,20 +51,38 @@ proc decode*[T: SomeInteger](input: openarray[byte]): (Option[T], seq[byte]) =
   var
     ls = @input
     digit: byte
-    resVal = 0.T
     mul = 1
+
+  when T is SomeInteger:
+    var resVal = 0.T
+  elif T is float32:
+    var resval = 0.uint32
+  elif T is float64:
+    var resval = 0.uint64
 
   #If this is larger than a single byte, build up the integer
   while len(ls) > 0:
     digit = ls.pop(0)
-    resVal += ((digit.int and 127) * mul).T
-    mul = mul * 128
+    when T is SomeInteger:
+      resVal += ((digit.int and 127) * mul).T
+    elif T is float32:
+      resVal += ((digit.int and 127) * mul).uint32
+    elif T is float64:
+      resVal += ((digit.int and 127) * mul).uint64
+
     if (digit and 128).int == 0.int:
       break
+
+    mul = mul * 128
 
   # If we ran out of bytes without a proper final termination byte,
   # this is also an error
   if not ((digit and 128).int == 0.int):
     return
 
-  result = (some(resVal), ls)
+  when T is float32:
+    result = (some(cast[float32](resVal)), ls)
+  elif T is float64:
+    result = (some(cast[float64](resVal)), ls)
+  else:
+    result = (some(resVal), ls)

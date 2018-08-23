@@ -4,6 +4,7 @@ import random
 import sequtils
 import strformat
 import options
+import math
 
 suite "Test EBV Round Trip":
   test "zero":
@@ -25,6 +26,22 @@ suite "Test EBV Round Trip":
     let (decRes, rem) = decode[int](enc)
     assert decRes.isSome()
     assert decRes.get() == 0xdeadbeef.int
+    assert rem.len() == 0
+
+  test "Floating Point F32":
+    let num = 1.234.float32
+    let enc = encode(num)
+    let (decRes, rem) = decode[float32](enc)
+    assert decRes.isSome()
+    assert decRes.get() == num
+    assert rem.len() == 0
+
+  test "Floating Point F64":
+    let num = 1.234.float64
+    let enc = encode(num)
+    let (decRes, rem) = decode[float64](enc)
+    assert decRes.isSome()
+    assert decRes.get() == num
     assert rem.len() == 0
 
   test "Two Integers":
