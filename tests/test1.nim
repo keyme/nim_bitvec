@@ -21,6 +21,13 @@ suite "Test EBV Round Trip":
     assert decRes.get() == 1.int
     assert rem.len() == 0
 
+  test "Negative One":
+    let enc = encode(-1)
+    let (decRes, rem) = decode[int](enc)
+    assert decRes.isSome()
+    assert decRes.get() == -1.int
+    assert rem.len() == 0
+
   test "DeadBeef":
     let enc = encode(0xdeadbeef)
     let (decRes, rem) = decode[int](enc)
@@ -30,6 +37,14 @@ suite "Test EBV Round Trip":
 
   test "Floating Point F32":
     let num = 1.234.float32
+    let enc = encode(num)
+    let (decRes, rem) = decode[float32](enc)
+    assert decRes.isSome()
+    assert decRes.get() == num
+    assert rem.len() == 0
+
+  test "negative Floating Point F32":
+    let num = -1.234.float32
     let enc = encode(num)
     let (decRes, rem) = decode[float32](enc)
     assert decRes.isSome()

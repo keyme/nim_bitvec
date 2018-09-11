@@ -25,11 +25,14 @@ proc encode*[T: SomeInteger](n: T): seq[byte] =
   if n == 0:
     return @[0.byte]
 
-  var num = n
-  while num > 0.T:
+  # This is a cast rather than a conversion in order to maintain bit
+  # position. i.e. if we cast a signed integer, I want the sign bit to
+  # stay in position 31 rather than position 63
+  var num = cast[uint64](n)
+  while num > 0.uint64:
     var v = num mod 128
     num = num div 128
-    if num > 0.T:
+    if num > 0.uint64:
       v = v or 0x80
     result.add(v.byte)
 
@@ -51,7 +54,7 @@ proc decode*[T: SomeInteger|float32|float64](input: openarray[byte]): (Option[T]
   var
     ls = @input
     digit: byte
-    mul = 1
+    mul:uint64 = 1
 
   when T is SomeInteger:
     var resVal = 0.T
@@ -64,11 +67,11 @@ proc decode*[T: SomeInteger|float32|float64](input: openarray[byte]): (Option[T]
   while len(ls) > 0:
     digit = ls.pop(0)
     when T is SomeInteger:
-      resVal += ((digit.int and 127) * mul).T
+      resVal += ((digit.int and 127).uint64 * mul).T
     elif T is float32:
-      resVal += ((digit.int and 127) * mul).uint32
+      resVal += ((digit.int and 127).uint64 * mul).uint32
     elif T is float64:
-      resVal += ((digit.int and 127) * mul).uint64
+      resVal += ((digit.int and 127).uint64 * mul).uint64
 
     if (digit and 128).int == 0.int:
       break
